@@ -355,9 +355,8 @@ Resolved (2026-06-12 second batch):
 31. ✅ Integration architecture: Integrations page is MVP approach; onboarding wizard = V2.
 32. ✅ Resend package added (v6.12.4). RESEND_API_KEY + RESEND_TO_EMAIL needed in Vercel.
 
-Remaining:
-- Local Node/icu4c blocks `pnpm typecheck` and `pnpm lint` (toolchain issue, not code).
-- Stripe subscription (next session — full day implementation).
+Resolved (2026-06-14):
+33. ✅ Stripe subscription integration: migration 007, lib/stripe.ts, checkout/portal/webhook API routes, Settings billing UI (trialing/active/past_due/canceled states).
 
 ## Meta Setup Notes
 
@@ -486,11 +485,12 @@ Do not run destructive git commands unless explicitly asked.
 9. ✅ Live test: human takeover + human reply + polling + emoji toggle (2026-06-12).
 10. ✅ AI context improvements + Business Context panel + Help Center email (2026-06-12).
 11. ✅ Add RESEND_API_KEY + RESEND_TO_EMAIL to Vercel env.
-12. Fill AI Settings, Services, Working Hours (manual data entry). ← NEXT
+12. Fill AI Settings, Services, Working Hours (manual data entry). ← kullanıcı yapar
 13. Test contact form + AI context (phone/working days) via WhatsApp.
 14. Prepare demo/pilot customer flow.
-15. Stripe subscription integration (next dedicated session).
-16. Move toward self-serve WhatsApp onboarding.
+15. ✅ Stripe subscription integration (2026-06-14).
+16. Stripe: Vercel env vars + Stripe Dashboard webhook kayıt + end-to-end test. ← NEXT
+17. Move toward self-serve WhatsApp onboarding.
 
 
 # NOTE: Whenever we change facebook access token, we need to start this command: 
