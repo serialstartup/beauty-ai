@@ -2,6 +2,7 @@ import { TopBar } from "@/components/dashboard/top-bar"
 import { StatsCard } from "@/components/ui/stats-card"
 import { WeeklyChart } from "@/components/dashboard/weekly-chart"
 import { EmptyState } from "@/components/ui/empty-state"
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist"
 import { createClient } from "@/lib/supabase/server"
 import {
   CalendarCheck,
@@ -33,11 +34,62 @@ export default async function DashboardPage() {
     supabase.from("appointments").select("start_time, status").gte("start_time", sevenDaysAgo),
   ])
 
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("business_id")
+    .eq("id", userData.user?.id)
+    .single()
+
   const { data: profile } = await supabase
     .from("users")
     .select("*")
     .eq("id", userData.user?.id)
     .single()
+
+  // Onboarding checklist data
+  let onboardingSteps: { id: string; label: string; description: string; done: boolean; href: string }[] = []
+  if (userProfile?.business_id) {
+    const [
+      { count: servicesCount },
+      { count: integrationsCount },
+      { data: bizInfo },
+    ] = await Promise.all([
+      supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", userProfile.business_id),
+      supabase.from("business_integrations").select("id", { count: "exact", head: true }).eq("business_id", userProfile.business_id),
+      supabase.from("businesses").select("phone, website, ai_instructions").eq("id", userProfile.business_id).single(),
+    ])
+
+    onboardingSteps = [
+      {
+        id: "business_info",
+        label: "Fill in business info",
+        description: "Add your phone number and website so AI can answer customer questions",
+        done: !!(bizInfo?.phone && bizInfo?.website),
+        href: "/settings",
+      },
+      {
+        id: "services",
+        label: "Add your services",
+        description: "List your services with prices so AI can book appointments",
+        done: (servicesCount ?? 0) > 0,
+        href: "/services",
+      },
+      {
+        id: "ai_settings",
+        label: "Configure AI receptionist",
+        description: "Write a custom prompt to give your AI a personality",
+        done: !!(bizInfo?.ai_instructions && bizInfo.ai_instructions.trim().length > 10),
+        href: "/ai-settings",
+      },
+      {
+        id: "whatsapp",
+        label: "Connect WhatsApp",
+        description: "Link your WhatsApp Business number to start receiving messages",
+        done: (integrationsCount ?? 0) > 0,
+        href: "/integrations",
+      },
+    ]
+  }
 
   // Calculate Total Revenue
   const totalRevenue = allAppts?.reduce((acc, appt) => {
@@ -84,6 +136,10 @@ export default async function DashboardPage() {
         searchPlaceholder="Search bookings..."
         profile={profile}
       />
+
+      {onboardingSteps.length > 0 && (
+        <OnboardingChecklist steps={onboardingSteps} />
+      )}
 
       <div className="p-6">
         {/* Stats Cards */}
