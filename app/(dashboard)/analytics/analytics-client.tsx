@@ -100,10 +100,10 @@ export function AnalyticsClient({
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.005 250)" vertical={false} />
                     <XAxis dataKey="day" tick={{ fontSize: 11, fill: "oklch(0.55 0.01 260)" }} axisLine={false} tickLine={false} tickMargin={10} />
-                    <YAxis tick={{ fontSize: 11, fill: "oklch(0.55 0.01 260)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                    <YAxis tick={{ fontSize: 11, fill: "oklch(0.55 0.01 260)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₺${v}`} />
                     <Tooltip
                       contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "12px" }}
-                      formatter={(v) => [`$${v ?? 0}`, t("analytics.revenue")]}
+                      formatter={(v) => [`₺${v ?? 0}`, t("analytics.revenue")]}
                     />
                     <Area type="monotone" dataKey="revenue" stroke="oklch(0.55 0.18 260)" strokeWidth={2} fill="url(#colorRevenue)" activeDot={{ r: 5, fill: "oklch(0.55 0.18 260)", strokeWidth: 0 }} />
                   </AreaChart>

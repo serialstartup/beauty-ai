@@ -166,7 +166,7 @@ export default async function DashboardPage() {
           />
           <StatsCard
             title={t("dashboard.totalRevenue")}
-            value={`$${totalRevenue.toLocaleString()}`}
+            value={`₺${totalRevenue.toLocaleString()}`}
             icon={DollarSign}
             trend={{ value: t("dashboard.allTimeEarnings"), positive: true }}
           />

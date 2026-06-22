@@ -179,7 +179,7 @@ export function CampaignsClient({ campaigns, profile }: CampaignsClientProps) {
           />
           <StatsCard
             title={t("campaigns.revenue")}
-            value="$0"
+            value="₺0"
             icon={DollarSign}
             subtitle={t("campaigns.trackingSoon")}
           />
