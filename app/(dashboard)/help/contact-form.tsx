@@ -4,9 +4,12 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { useLanguage } from "@/lib/i18n"
 
+const SUBJECT_KEYS = ["techIssue", "billingQ", "featureReq", "other"] as const
+type SubjectKey = typeof SUBJECT_KEYS[number]
+
 export function ContactForm() {
   const { t } = useLanguage()
-  const [subject, setSubject] = useState(t("help.techIssue"))
+  const [subjectKey, setSubjectKey] = useState<SubjectKey>("techIssue")
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
 
@@ -18,7 +21,7 @@ export function ContactForm() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, message }),
+        body: JSON.stringify({ subject: t(`help.${subjectKey}`), message }),
       })
       if (!res.ok) throw new Error()
       toast.success(t("help.messageSent"))
@@ -37,14 +40,13 @@ export function ContactForm() {
           {t("help.subject")}
         </label>
         <select
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          value={subjectKey}
+          onChange={(e) => setSubjectKey(e.target.value as SubjectKey)}
           className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
         >
-          <option>{t("help.techIssue")}</option>
-          <option>{t("help.billingQ")}</option>
-          <option>{t("help.featureReq")}</option>
-          <option>{t("help.other")}</option>
+          {SUBJECT_KEYS.map((k) => (
+            <option key={k} value={k}>{t(`help.${k}`)}</option>
+          ))}
         </select>
       </div>
       <div>

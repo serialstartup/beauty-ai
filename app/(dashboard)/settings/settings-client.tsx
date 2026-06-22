@@ -25,10 +25,11 @@ type SettingsSection = "profile" | "business" | "billing" | "notifications"
 interface SettingsClientProps {
   business: any
   profile: any
+  email?: string
   billingStatus?: string
 }
 
-export function SettingsClient({ business, profile, billingStatus }: SettingsClientProps) {
+export function SettingsClient({ business, profile, email, billingStatus }: SettingsClientProps) {
   const { t } = useLanguage()
   const [activeSection, setActiveSection] = useState<SettingsSection>("business")
   const [isSaving, setIsSaving] = useState(false)
@@ -463,7 +464,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("settings.emailAddress")}</label>
-                    <input type="email" readOnly defaultValue={profile?.email || ""} className="w-full cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground outline-none" />
+                    <input type="email" readOnly defaultValue={email || ""} className="w-full cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground outline-none" />
                   </div>
                 </div>
 

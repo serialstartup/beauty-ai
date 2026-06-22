@@ -110,6 +110,7 @@ export function CampaignsClient({ campaigns, profile }: CampaignsClientProps) {
     const matchesSearch = c.name?.toLowerCase().includes(searchQuery.toLowerCase())
     if (!matchesSearch) return false
     if (activeTab === "all") return true
+    if (activeTab === "draft") return ["draft", "paused"].includes(c.status?.toLowerCase())
     return c.status?.toLowerCase() === activeTab
   })
 

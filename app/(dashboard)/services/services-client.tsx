@@ -46,6 +46,7 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
   const router = useRouter()
 
   const handleEdit = (service: any) => {
+    setSelectedService(service)
     setFormData({
       name: service.name,
       category: service.category || "HAIR",
@@ -149,13 +150,13 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
           </button>
         </div>
 
-        {services.length === 0 || filteredServices.length === 0 ? (
+        {services.length === 0 ? (
           <div className="mt-6">
             <EmptyState
               icon={Scissors}
-              title={services.length === 0 ? t("services.noServices") : t("services.noResults")}
-              description={services.length === 0 ? t("services.noServicesDesc") : `"${searchQuery}"`}
-              action={services.length === 0 && (
+              title={t("services.noServices")}
+              description={t("services.noServicesDesc")}
+              action={(
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
@@ -224,7 +225,7 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-foreground">{formatDuration(service.duration_minutes)}</td>
-                        <td className="px-6 py-4 text-sm font-semibold text-foreground">${service.price}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-foreground">{service.price} ₺</td>
                         <td className="px-6 py-4">
                           <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", service.is_active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>
                             {service.is_active ? t("common.active") : t("common.inactive")}
@@ -266,7 +267,7 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                 <div className="mt-5 space-y-5">
                   <div>
                     <h4 className="text-lg font-semibold text-foreground">{selectedService.name}</h4>
-                    <p className="text-primary font-medium mt-1">${selectedService.price} • {formatDuration(selectedService.duration_minutes)}</p>
+                    <p className="text-primary font-medium mt-1">{selectedService.price} ₺ • {formatDuration(selectedService.duration_minutes)}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">{t("services.description")}</p>
@@ -321,7 +322,7 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.price")} ($)</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.price")} (₺)</label>
                   <input required type="number" step="0.01" placeholder="25.00" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" />
                 </div>
               </div>

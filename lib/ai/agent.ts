@@ -2,7 +2,8 @@ import OpenAI from "openai"
 import { tools } from "./tools"
 import { createAdminClient } from "@/lib/supabase/server"
 import { getAvailableSlots } from "@/lib/scheduling/engine"
-import { addMinutes, parseISO, format } from "date-fns"
+import { addMinutes, format } from "date-fns"
+import { localToUTC } from "@/lib/timezone"
 
 function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -160,7 +161,7 @@ export async function processConversationMessage(conversationId: string) {
           if (!service) {
             result = JSON.stringify({ success: false, message: "Service not found." })
           } else {
-            const startDt = parseISO(`${args.date}T${args.time}:00`)
+            const startDt = localToUTC(`${args.date}T${args.time}`, business.timezone || "UTC")
             const endDt = addMinutes(startDt, service.duration_minutes)
             const startTime = startDt.toISOString()
             const endTime = endDt.toISOString()

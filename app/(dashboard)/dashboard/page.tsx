@@ -124,11 +124,19 @@ export default async function DashboardPage() {
   }
   const weeklyData = Object.entries(weeklyMap).map(([day, v]) => ({ day, ...v }))
 
+  const statusLabel: Record<string, string> = {
+    scheduled: t("appointments.statusScheduled"),
+    confirmed: t("appointments.statusConfirmed"),
+    completed: t("appointments.statusCompleted"),
+    cancelled: t("appointments.statusCancelled"),
+    "no-show": t("appointments.statusNoShow"),
+  }
+
   return (
     <div>
       <TopBar
         title={t("nav.dashboard")}
-        searchPlaceholder="Search bookings..."
+        searchPlaceholder={t("dashboard.searchPh")}
         profile={profile}
       />
 
@@ -215,7 +223,7 @@ export default async function DashboardPage() {
                             {apt.services?.name || "Service"}
                           </p>
                           <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                            {apt.status}
+                            {statusLabel[apt.status] || apt.status}
                           </span>
                         </div>
                         <p className="truncate text-xs text-muted-foreground">

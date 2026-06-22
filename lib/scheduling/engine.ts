@@ -5,18 +5,20 @@ import {
   isAfter,
   setHours,
   setMinutes,
-  format,
   parseISO,
   startOfDay,
   addDays,
 } from "date-fns"
+import { getTzOffsetMs, formatInTz } from "@/lib/timezone"
 
 /**
- * Parses a time string like "09:00" into a Date object for a specific day.
+ * Parses a time string like "09:00" as local business time and returns a UTC Date.
  */
-function parseTimeStr(date: Date, timeStr: string): Date {
+function parseLocalTimeStr(date: Date, timeStr: string, timezone: string): Date {
+  const offsetMs = getTzOffsetMs(timezone, date)
   const [hours, minutes] = timeStr.split(":").map(Number)
-  return setMinutes(setHours(startOfDay(date), hours), minutes)
+  const naive = setMinutes(setHours(startOfDay(date), hours), minutes)
+  return new Date(naive.getTime() - offsetMs)
 }
 
 /**
@@ -55,7 +57,7 @@ export async function getAvailableSlots(
   // 1. Fetch Business Details
   const { data: business, error: bizError } = await supabase
     .from("businesses")
-    .select("working_hours_start, working_hours_end, working_days")
+    .select("working_hours_start, working_hours_end, working_days, timezone")
     .eq("id", businessId)
     .single()
 
@@ -80,8 +82,11 @@ export async function getAvailableSlots(
   }
 
   // 3. Fetch existing appointments for the given date and business
-  const startOfDayUtc = startOfDay(date).toISOString()
-  const endOfDayUtc = startOfDay(addDays(date, 1)).toISOString()
+  // Query a wide enough UTC window to cover the full local business day
+  const tz = (business as any).timezone || "UTC"
+  const offsetMs = getTzOffsetMs(tz, date)
+  const startOfDayUtc = new Date(startOfDay(date).getTime() - offsetMs).toISOString()
+  const endOfDayUtc = new Date(startOfDay(addDays(date, 1)).getTime() - offsetMs).toISOString()
 
   const { data: appointments, error: apptError } = await supabase
     .from("appointments")
@@ -99,8 +104,8 @@ export async function getAvailableSlots(
   const availableSlots: Array<{ time: string }> = []
   const duration = service.duration_minutes
 
-  const startTime = parseTimeStr(date, business.working_hours_start)
-  const endTime = parseTimeStr(date, business.working_hours_end)
+  const startTime = parseLocalTimeStr(date, business.working_hours_start, tz)
+  const endTime = parseLocalTimeStr(date, business.working_hours_end, tz)
 
   const stepMinutes = 15
   let currentSlot = startTime
@@ -118,7 +123,7 @@ export async function getAvailableSlots(
     const hasConflict = checkConflict(slotStart, slotEnd, appointments || [])
 
     if (!hasConflict) {
-      availableSlots.push({ time: format(slotStart, "HH:mm") })
+      availableSlots.push({ time: formatInTz(slotStart, tz) })
     }
 
     currentSlot = addMinutes(currentSlot, stepMinutes)

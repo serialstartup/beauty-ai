@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { ChevronLeft, ChevronRight, Clock, X, User, AlignLeft, Phone, Calendar as CalendarIcon, Plus } from "lucide-react"
 import { updateAppointment, createAppointment } from "@/app/(dashboard)/actions"
+import { useLanguage } from "@/lib/i18n"
 
 interface Appointment {
   id: string
@@ -51,6 +52,8 @@ const INTERVALS = [0, 15, 30, 45]
 
 export function AdvancedCalendar({ appointments, customers, services }: AdvancedCalendarProps) {
   const router = useRouter()
+  const { lang, t } = useLanguage()
+  const locale = lang === "tr" ? "tr-TR" : "en-US"
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -167,14 +170,14 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
         <div className="flex items-center gap-4">
           <h3 className="text-lg font-bold text-foreground">
-            {startOfWeek.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+            {startOfWeek.toLocaleDateString(locale, { month: "long", year: "numeric" })}
           </h3>
           <div className="flex items-center rounded-lg border border-border bg-background p-1">
             <button onClick={prevWeek} className="p-1.5 hover:bg-accent rounded-md transition-colors">
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button onClick={goToToday} className="px-3 py-1 text-xs font-semibold hover:bg-accent rounded-md transition-colors">
-              Today
+              {t("calendar.today")}
             </button>
             <button onClick={nextWeek} className="p-1.5 hover:bg-accent rounded-md transition-colors">
               <ChevronRight className="h-4 w-4" />
@@ -184,14 +187,14 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-background px-3 py-1.5 rounded-full border border-border">
             <Clock className="h-3 w-3 text-primary" />
-            <span>15-min Intervals</span>
+            <span>{t("calendar.intervals")}</span>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
           >
             <Plus className="h-3.5 w-3.5" />
-            New
+            {t("common.new")}
           </button>
         </div>
       </div>
@@ -223,7 +226,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
               return (
                 <div key={i} className="flex-1 min-w-[120px] py-3 text-center border-r border-border last:border-0">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    {day.toLocaleDateString(undefined, { weekday: "short" })}
+                    {day.toLocaleDateString(locale, { weekday: "short" })}
                   </p>
                   <p className={cn(
                     "mt-1 text-sm font-bold w-7 h-7 flex items-center justify-center mx-auto rounded-full",
@@ -280,7 +283,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                         </p>
                       </div>
                       <div className="absolute inset-0 bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-[10px] font-bold text-primary-foreground">View Details</p>
+                        <p className="text-[10px] font-bold text-primary-foreground">{t("calendar.viewDetails")}</p>
                       </div>
                     </div>
                   )
@@ -325,7 +328,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                     {selectedAppointment.status}
                   </span>
                   <span className="text-[11px] font-medium text-muted-foreground">
-                    Source: {selectedAppointment.source || "Manual"}
+                    {t("calendar.source")}: {selectedAppointment.source || "Manual"}
                   </span>
                 </div>
                 <h4 className="text-xl font-bold text-foreground">
@@ -339,7 +342,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                     <User className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Customer</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{t("appointments.customer")}</p>
                     <p className="text-sm font-semibold text-foreground">{selectedAppointment.customers?.name}</p>
                     {selectedAppointment.customers?.phone && (
                       <div className="flex items-center gap-1.5 mt-1 text-xs text-primary">
@@ -355,14 +358,14 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                     <Clock className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Time & Duration</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{t("calendar.timeDuration")}</p>
                     <p className="text-sm font-semibold text-foreground">
-                      {new Date(selectedAppointment.start_time).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+                      {new Date(selectedAppointment.start_time).toLocaleDateString(locale, { weekday: "long", month: "short", day: "numeric" })}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(selectedAppointment.start_time).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} –{" "}
-                      {new Date(selectedAppointment.end_time).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}{" "}
-                      ({selectedAppointment.services?.duration_minutes} mins)
+                      {new Date(selectedAppointment.start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} –{" "}
+                      {new Date(selectedAppointment.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}{" "}
+                      ({selectedAppointment.services?.duration_minutes} {t("appointments.min")})
                     </p>
                   </div>
                 </div>
@@ -373,7 +376,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                       <AlignLeft className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Notes</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{t("appointments.notes")}</p>
                       <p className="text-sm text-foreground leading-relaxed italic">"{selectedAppointment.notes}"</p>
                     </div>
                   </div>
@@ -389,14 +392,14 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                       disabled={isUpdating}
                       className="flex-1 px-4 py-2.5 rounded-xl bg-success/10 border border-success/30 text-success text-sm font-semibold hover:bg-success/20 transition-colors disabled:opacity-50"
                     >
-                      Confirm
+                      {t("calendar.confirm")}
                     </button>
                     <button
                       onClick={() => handleStatusUpdate("cancelled")}
                       disabled={isUpdating}
                       className="flex-1 px-4 py-2.5 rounded-xl border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/10 transition-colors disabled:opacity-50"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                   </div>
                 )}
@@ -407,21 +410,21 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                       disabled={isUpdating}
                       className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 disabled:opacity-50"
                     >
-                      Complete
+                      {t("calendar.complete")}
                     </button>
                     <button
                       onClick={() => handleStatusUpdate("no-show")}
                       disabled={isUpdating}
                       className="flex-1 px-4 py-2.5 rounded-xl border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/10 transition-colors disabled:opacity-50"
                     >
-                      No-show
+                      {t("calendar.noShow")}
                     </button>
                     <button
                       onClick={() => handleStatusUpdate("cancelled")}
                       disabled={isUpdating}
                       className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground text-sm font-semibold hover:bg-accent transition-colors disabled:opacity-50"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                   </div>
                 )}
@@ -429,7 +432,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                   onClick={() => setSelectedAppointment(null)}
                   className="w-full px-4 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-accent transition-colors"
                 >
-                  Close
+                  {t("calendar.close")}
                 </button>
               </div>
             </div>
@@ -448,7 +451,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h3 className="text-lg font-bold text-foreground">New Appointment</h3>
+              <h3 className="text-lg font-bold text-foreground">{t("calendar.newAppt")}</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="rounded-full p-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -460,7 +463,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
-                  Customer <span className="text-destructive">*</span>
+                  {t("appointments.customer")} <span className="text-destructive">*</span>
                 </label>
                 <select
                   value={createForm.customer_id}
@@ -468,7 +471,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                   className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   required
                 >
-                  <option value="">Select customer...</option>
+                  <option value="">{t("appointments.selectCustomer")}</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -477,7 +480,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
 
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
-                  Service <span className="text-destructive">*</span>
+                  {t("appointments.service")} <span className="text-destructive">*</span>
                 </label>
                 <select
                   value={createForm.service_id}
@@ -485,10 +488,10 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                   className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   required
                 >
-                  <option value="">Select service...</option>
+                  <option value="">{t("appointments.selectService")}</option>
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.duration_minutes} min{s.price ? ` — $${s.price}` : ""})
+                      {s.name} ({s.duration_minutes} {t("appointments.min")}{s.price ? ` — ${s.price} ₺` : ""})
                     </option>
                   ))}
                 </select>
@@ -496,7 +499,7 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
 
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
-                  Date & Time <span className="text-destructive">*</span>
+                  {t("calendar.timeDuration")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="datetime-local"
@@ -509,13 +512,13 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
 
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
-                  Notes
+                  {t("appointments.notes")}
                 </label>
                 <textarea
                   value={createForm.notes}
                   onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={2}
-                  placeholder="Optional notes..."
+                  placeholder={t("calendar.notesPlaceholder")}
                   className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -526,14 +529,14 @@ export function AdvancedCalendar({ appointments, customers, services }: Advanced
                   onClick={() => setShowCreateModal(false)}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-accent transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 disabled:opacity-50"
                 >
-                  {isCreating ? "Creating..." : "Create"}
+                  {isCreating ? t("calendar.creating") : t("calendar.create")}
                 </button>
               </div>
             </form>

@@ -36,6 +36,7 @@ export default async function SettingsPage({
     <SettingsClient
       business={business}
       profile={userProfile}
+      email={userData.user?.email}
       billingStatus={params.billing}
     />
   )
