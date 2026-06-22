@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLanguage } from "@/lib/i18n"
 
 type TimeFilter = "today" | "upcoming" | "week" | "month"
 
@@ -53,6 +54,7 @@ export function AppointmentsClient({
   services,
   profile,
 }: AppointmentClientProps) {
+  const { t } = useLanguage()
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming")
   const [searchQuery, setSearchQuery] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -72,23 +74,17 @@ export function AppointmentsClient({
     try {
       await createAppointment(formData)
       setIsModalOpen(false)
-      setFormData({
-        customer_id: "",
-        service_id: "",
-        start_time: "",
-        notes: "",
-      })
-      toast.success("Appointment booked.")
+      setFormData({ customer_id: "", service_id: "", start_time: "", notes: "" })
+      toast.success(t("appointments.booked"))
       router.refresh()
-    } catch (error) {
-      toast.error("Failed to create appointment.")
+    } catch {
+      toast.error(t("appointments.failedCreate"))
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleExport = () => {
-    // Generate CSV content
     const headers = ["Date", "Time", "Customer", "Phone", "Service", "Status"]
     const rows = filteredAppointments.map((appt) => {
       const startTime = new Date(appt.start_time)
@@ -101,20 +97,18 @@ export function AppointmentsClient({
         appt.status,
       ].join(",")
     })
-
     const csvContent = [headers.join(","), ...rows].join("\n")
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `appointments_${timeFilter}_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute("download", `appointments_${timeFilter}_${new Date().toISOString().split("T")[0]}.csv`)
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
   }
 
-  // Filter appointments
   const filteredAppointments = appointments.filter((appt) => {
     const searchLower = searchQuery.toLowerCase()
     const matchesSearch =
@@ -124,10 +118,9 @@ export function AppointmentsClient({
 
     if (!matchesSearch) return false
 
-    // Time filtering
     const apptDate = new Date(appt.start_time)
     const now = new Date()
-    
+
     if (timeFilter === "today") {
       return apptDate.toDateString() === now.toDateString()
     } else if (timeFilter === "upcoming") {
@@ -147,29 +140,36 @@ export function AppointmentsClient({
       oneMonthLater.setMonth(startOfToday.getMonth() + 1)
       return apptDate >= startOfToday && apptDate <= oneMonthLater
     }
-
     return true
   })
 
-  // Calculate totals based on filtered results for consistency
   const totalRevenue = filteredAppointments.reduce(
     (acc, appt) => acc + (appt.services?.price || 0),
     0
   )
 
-  // For MVP Calendar view, we generate a simple 7-day grid starting from today
-  const today = new Date()
-  const weekDays = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
-    return d
-  })
+  const filterLabels: Record<TimeFilter, string> = {
+    today: t("appointments.today"),
+    upcoming: t("appointments.upcoming"),
+    week: t("appointments.week"),
+    month: t("appointments.month"),
+  }
+
+  const emptyDesc = searchQuery
+    ? `"${searchQuery}"`
+    : timeFilter === "today"
+      ? t("appointments.noApptToday")
+      : timeFilter === "upcoming"
+        ? t("appointments.noApptUpcoming")
+        : timeFilter === "week"
+          ? t("appointments.noApptWeek")
+          : t("appointments.noApptMonth")
 
   return (
     <div>
       <TopBar
-        title="Appointments"
-        searchPlaceholder="Search by customer or service..."
+        title={t("appointments.title")}
+        searchPlaceholder={t("appointments.searchPh")}
         profile={profile}
       />
 
@@ -177,13 +177,13 @@ export function AppointmentsClient({
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex w-full flex-1 items-center gap-4 sm:w-auto">
             <h2 className="text-lg font-bold text-foreground">
-              Appointments List
+              {t("appointments.listTitle")}
             </h2>
             <div className="relative max-w-sm flex-1">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search by customer or service..."
+                placeholder={t("appointments.searchPh")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 w-full rounded-lg border border-border bg-background pr-4 pl-9 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
@@ -198,57 +198,46 @@ export function AppointmentsClient({
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
                   className={cn(
-                    "rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-all",
+                    "rounded-md px-3 py-1.5 text-sm font-medium transition-all",
                     timeFilter === filter
                       ? "bg-accent text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {filter}
+                  {filterLabels[filter]}
                 </button>
               ))}
             </div>
-            <button 
+            <button
               onClick={handleExport}
               className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
               <Download className="h-4 w-4" />
-              Export
+              {t("appointments.export")}
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]"
             >
               <Plus className="h-4 w-4" />
-              New
+              {t("appointments.new")}
             </button>
           </div>
         </div>
 
-        {/* Content Area */}
         {filteredAppointments.length === 0 ? (
           <div className="mt-6">
             <EmptyState
               icon={CalendarDays}
-              title={searchQuery ? "No results found" : "No appointments"}
-              description={
-                searchQuery
-                  ? `We couldn't find any appointments matching "${searchQuery}".`
-                  : timeFilter === "today"
-                    ? "No appointments scheduled for today."
-                    : timeFilter === "upcoming"
-                      ? "No upcoming appointments. New bookings will appear here."
-                      : timeFilter === "week"
-                        ? "No appointments in the next 7 days."
-                        : "No appointments in the next 30 days."
-              }
+              title={searchQuery ? t("appointments.noResults") : t("appointments.noAppts")}
+              description={emptyDesc}
               action={
                 !searchQuery && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                   >
-                    Add Appointment
+                    {t("appointments.addAppt")}
                   </button>
                 )
               }
@@ -259,20 +248,18 @@ export function AppointmentsClient({
             <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Date & Time
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Customer
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Service
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Status
-                  </th>
+                  {[
+                    t("appointments.dateTime"),
+                    t("appointments.customer"),
+                    t("appointments.service"),
+                    t("appointments.status"),
+                  ].map((h) => (
+                    <th key={h} className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                      {h}
+                    </th>
+                  ))}
                   <th className="px-6 py-4 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Actions
+                    {t("appointments.actions")}
                   </th>
                 </tr>
               </thead>
@@ -285,24 +272,14 @@ export function AppointmentsClient({
                   )
 
                   return (
-                    <tr
-                      key={appt.id}
-                      className="group transition-colors hover:bg-accent/30"
-                    >
+                    <tr key={appt.id} className="group transition-colors hover:bg-accent/30">
                       <td className="px-6 py-4">
                         <p className="text-sm font-semibold text-foreground">
-                          {startTime.toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}{" "}
-                          •{" "}
-                          {startTime.toLocaleTimeString(undefined, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {startTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}{" "}•{" "}
+                          {startTime.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {durationMins} min
+                          {durationMins} {t("appointments.min")}
                         </p>
                       </td>
                       <td className="px-6 py-4">
@@ -312,7 +289,7 @@ export function AppointmentsClient({
                           </div>
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-foreground">
-                              {appt.customers?.name || "Unknown"}
+                              {appt.customers?.name || t("common.unknown")}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               {appt.customers?.phone}
@@ -321,15 +298,13 @@ export function AppointmentsClient({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-foreground">
-                        {appt.services?.name || "Service Removed"}
+                        {appt.services?.name || t("appointments.serviceRemoved")}
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={cn(
                             "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize",
-                            statusStyles[
-                              appt.status as keyof typeof statusStyles
-                            ] || statusStyles.scheduled
+                            statusStyles[appt.status as keyof typeof statusStyles] || statusStyles.scheduled
                           )}
                         >
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -344,37 +319,60 @@ export function AppointmentsClient({
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {(["confirmed", "completed", "no-show"] as const).map((s) => (
-                              <DropdownMenuItem
-                                key={s}
-                                onClick={async () => {
-                                  try {
-                                    await updateAppointment(appt.id, { status: s })
-                                    toast.success(`Marked as ${s}.`)
-                                    router.refresh()
-                                  } catch {
-                                    toast.error("Failed to update status.")
-                                  }
-                                }}
-                              >
-                                Mark {s}
-                              </DropdownMenuItem>
-                            ))}
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await updateAppointment(appt.id, { status: "confirmed" })
+                                  toast.success(`Marked as confirmed.`)
+                                  router.refresh()
+                                } catch {
+                                  toast.error(t("appointments.failedUpdate"))
+                                }
+                              }}
+                            >
+                              {t("appointments.markConfirmed")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await updateAppointment(appt.id, { status: "completed" })
+                                  toast.success(`Marked as completed.`)
+                                  router.refresh()
+                                } catch {
+                                  toast.error(t("appointments.failedUpdate"))
+                                }
+                              }}
+                            >
+                              {t("appointments.markCompleted")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await updateAppointment(appt.id, { status: "no-show" })
+                                  toast.success(`Marked as no-show.`)
+                                  router.refresh()
+                                } catch {
+                                  toast.error(t("appointments.failedUpdate"))
+                                }
+                              }}
+                            >
+                              {t("appointments.markNoShow")}
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
                               onClick={async () => {
-                                if (!confirm("Cancel this appointment?")) return
+                                if (!confirm(t("appointments.cancelApptConfirm"))) return
                                 try {
                                   await deleteAppointment(appt.id)
-                                  toast.success("Appointment cancelled.")
+                                  toast.success(t("appointments.cancelled"))
                                   router.refresh()
                                 } catch {
-                                  toast.error("Failed to cancel appointment.")
+                                  toast.error(t("appointments.failedCancel"))
                                 }
                               }}
                             >
-                              Cancel appointment
+                              {t("appointments.cancelAppt")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -387,38 +385,36 @@ export function AppointmentsClient({
           </div>
         )}
 
-        {/* Bottom Stats */}
         {appointments.length > 0 && (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatsCard
-              title="Bookings Total"
+              title={t("appointments.bookingsTotal")}
               value={filteredAppointments.length}
               icon={CalendarCheck}
-              trend={{ value: "Based on real database", positive: true }}
+              trend={{ value: t("appointments.basedOnDb"), positive: true }}
             />
             <StatsCard
-              title="Expected Revenue"
+              title={t("appointments.expectedRevenue")}
               value={`$${totalRevenue.toLocaleString()}`}
               icon={DollarSign}
-              trend={{ value: "Based on booked services", positive: true }}
+              trend={{ value: t("appointments.basedOnBookedServices"), positive: true }}
             />
             <StatsCard
-              title="Waitlist"
+              title={t("appointments.waitlist")}
               value={0}
               icon={Users}
-              subtitle="Clients waiting"
+              subtitle={t("appointments.clientsWaiting")}
             />
           </div>
         )}
       </div>
 
-      {/* New Appointment Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg animate-in rounded-xl border border-border bg-card p-6 shadow-lg duration-200 fade-in zoom-in">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-xl font-bold text-foreground">
-                Add New Appointment
+                {t("appointments.addNewAppt")}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -431,17 +427,15 @@ export function AppointmentsClient({
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Customer
+                  {t("appointments.customer")}
                 </label>
                 <select
                   required
                   value={formData.customer_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customer_id: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
                   className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 >
-                  <option value="">Select a customer...</option>
+                  <option value="">{t("appointments.selectCustomer")}</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} ({c.phone})
@@ -452,20 +446,18 @@ export function AppointmentsClient({
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Service
+                  {t("appointments.service")}
                 </label>
                 <select
                   required
                   value={formData.service_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, service_id: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, service_id: e.target.value })}
                   className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 >
-                  <option value="">Select a service...</option>
+                  <option value="">{t("appointments.selectService")}</option>
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} - {s.duration_minutes} min
+                      {s.name} - {s.duration_minutes} {t("appointments.min")}
                     </option>
                   ))}
                 </select>
@@ -473,29 +465,25 @@ export function AppointmentsClient({
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Start Time
+                  {t("appointments.startTime")}
                 </label>
                 <input
                   required
                   type="datetime-local"
                   value={formData.start_time}
-                  onChange={(e) =>
-                    setFormData({ ...formData, start_time: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                   className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Notes (Optional)
+                  {t("appointments.notes")}
                 </label>
                 <textarea
                   value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  placeholder="Any special requests?"
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder={t("appointments.notesPh")}
                   className="h-20 w-full resize-none rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
               </div>
@@ -506,7 +494,7 @@ export function AppointmentsClient({
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -516,10 +504,10 @@ export function AppointmentsClient({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
+                      {t("appointments.saving")}
                     </>
                   ) : (
-                    "Book Appointment"
+                    t("appointments.bookAppt")
                   )}
                 </button>
               </div>

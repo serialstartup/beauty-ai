@@ -1,25 +1,23 @@
 import { TopBar } from "@/components/dashboard/top-bar"
 import { StatsCard } from "@/components/ui/stats-card"
 import { WeeklyChart } from "@/components/dashboard/weekly-chart"
-import { EmptyState } from "@/components/ui/empty-state"
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist"
 import { createClient } from "@/lib/supabase/server"
+import { getServerT } from "@/lib/i18n/server"
 import {
   CalendarCheck,
   Clock,
   Users,
   DollarSign,
-  LayoutGrid,
   Calendar,
   User,
 } from "lucide-react"
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
+  const [supabase, t] = await Promise.all([createClient(), getServerT()])
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  // Execute queries in parallel using Promise.all
   const [
     { data: appointments },
     { data: customers },
@@ -46,7 +44,6 @@ export default async function DashboardPage() {
     .eq("id", userData.user?.id)
     .single()
 
-  // Onboarding checklist data
   let onboardingSteps: { id: string; label: string; description: string; done: boolean; href: string }[] = []
   if (userProfile?.business_id) {
     const [
@@ -62,46 +59,44 @@ export default async function DashboardPage() {
     onboardingSteps = [
       {
         id: "business_info",
-        label: "Fill in business info",
-        description: "Add your phone number and website so AI can answer customer questions",
-        done: !!(bizInfo?.phone && bizInfo?.website),
+        label: t("onboarding.fillBusiness"),
+        description: t("onboarding.fillBusinessDesc"),
+        done: !!bizInfo?.phone,
         href: "/settings",
       },
       {
         id: "services",
-        label: "Add your services",
-        description: "List your services with prices so AI can book appointments",
+        label: t("onboarding.addServices"),
+        description: t("onboarding.addServicesDesc"),
         done: (servicesCount ?? 0) > 0,
         href: "/services",
       },
       {
         id: "ai_settings",
-        label: "Configure AI receptionist",
-        description: "Write a custom prompt to give your AI a personality",
+        label: t("onboarding.configureAI"),
+        description: t("onboarding.configureAIDesc"),
         done: !!(bizInfo?.ai_instructions && bizInfo.ai_instructions.trim().length > 10),
         href: "/ai-settings",
       },
       {
         id: "whatsapp",
-        label: "Connect WhatsApp",
-        description: "Link your WhatsApp Business number to start receiving messages",
+        label: t("onboarding.connectWhatsApp"),
+        description: t("onboarding.connectWhatsAppDesc"),
         done: (integrationsCount ?? 0) > 0,
         href: "/integrations",
       },
     ]
   }
 
-  // Calculate Total Revenue
   const totalRevenue = allAppts?.reduce((acc, appt) => {
     const service = Array.isArray(appt.services) ? appt.services[0] : appt.services
     return acc + (service?.price || 0)
   }, 0) || 0
 
-  // Process data for Stats
   const appts = appointments || []
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
+
   const todayAppts = appts.filter(a => {
     const d = new Date(a.start_time)
     d.setHours(0, 0, 0, 0)
@@ -132,7 +127,7 @@ export default async function DashboardPage() {
   return (
     <div>
       <TopBar
-        title="Dashboard"
+        title={t("nav.dashboard")}
         searchPlaceholder="Search bookings..."
         profile={profile}
       />
@@ -142,55 +137,52 @@ export default async function DashboardPage() {
       )}
 
       <div className="p-6">
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard
-            title="Today Appts"
+            title={t("dashboard.todayAppts")}
             value={todayAppts.length}
             icon={CalendarCheck}
-            trend={{ value: "Based on real data", positive: true }}
+            trend={{ value: t("dashboard.basedOnRealData"), positive: true }}
           />
           <StatsCard
-            title="Upcoming"
+            title={t("dashboard.upcoming")}
             value={upcomingAppts.length}
             icon={Clock}
-            subtitle="All upcoming bookings"
+            subtitle={t("dashboard.upcomingDesc")}
           />
           <StatsCard
-            title="Recent Customers"
+            title={t("dashboard.recentCustomers")}
             value={customers?.length || 0}
             icon={Users}
-            subtitle="Total customers added"
+            subtitle={t("dashboard.totalCustomersAdded")}
           />
           <StatsCard
-            title="Total Revenue"
+            title={t("dashboard.totalRevenue")}
             value={`$${totalRevenue.toLocaleString()}`}
             icon={DollarSign}
-            trend={{ value: "All time earnings", positive: true }}
+            trend={{ value: t("dashboard.allTimeEarnings"), positive: true }}
           />
         </div>
 
-        {/* Charts and Lists Row */}
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Weekly Chart */}
           <div className="col-span-2 rounded-xl border border-border bg-card p-6">
             <div className="mb-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-lg font-bold text-foreground">
-                  Weekly Appointments
+                  {t("dashboard.weeklyAppts")}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Booking trends over the last 7 days
+                  {t("dashboard.weeklyDesc")}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">Confirmed</span>
+                  <span className="text-muted-foreground">{t("dashboard.confirmed")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full bg-primary/30" />
-                  <span className="text-muted-foreground">AI Suggested</span>
+                  <span className="text-muted-foreground">{t("dashboard.aiSuggested")}</span>
                 </div>
               </div>
             </div>
@@ -199,12 +191,11 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-6">
-            {/* Upcoming Appointments */}
             <div className="rounded-xl border border-border bg-card p-6 flex-1">
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-foreground">Next Up</h3>
+                <h3 className="text-lg font-bold text-foreground">{t("dashboard.nextUp")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Upcoming appointments
+                  {t("dashboard.nextUpDesc")}
                 </p>
               </div>
 
@@ -228,7 +219,7 @@ export default async function DashboardPage() {
                           </span>
                         </div>
                         <p className="truncate text-xs text-muted-foreground">
-                          {apt.customers?.name || "Unknown Customer"}
+                          {apt.customers?.name || t("appointments.unknownCustomer")}
                         </p>
                         <p className="text-[10px] text-muted-foreground/70">
                           {new Date(apt.start_time).toLocaleString()}
@@ -240,18 +231,17 @@ export default async function DashboardPage() {
               ) : (
                 <div className="py-8 text-center">
                   <Calendar className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                  <p className="mt-2 text-sm font-medium text-foreground">No upcoming</p>
-                  <p className="text-xs text-muted-foreground">Your schedule is clear</p>
+                  <p className="mt-2 text-sm font-medium text-foreground">{t("dashboard.noUpcoming")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.scheduleEmpty")}</p>
                 </div>
               )}
             </div>
 
-            {/* Recent Customers */}
             <div className="rounded-xl border border-border bg-card p-6 flex-1">
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-foreground">Recent Customers</h3>
+                <h3 className="text-lg font-bold text-foreground">{t("dashboard.recentCustomers")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Latest signups or visitors
+                  {t("dashboard.latestSignups")}
                 </p>
               </div>
 
@@ -270,7 +260,7 @@ export default async function DashboardPage() {
                           {cust.name}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {cust.phone || "No phone"}
+                          {cust.phone || t("common.noPhone")}
                         </p>
                       </div>
                     </div>
@@ -279,8 +269,8 @@ export default async function DashboardPage() {
               ) : (
                 <div className="py-8 text-center">
                   <User className="mx-auto h-8 w-8 text-muted-foreground/50" />
-                  <p className="mt-2 text-sm font-medium text-foreground">No customers</p>
-                  <p className="text-xs text-muted-foreground">Add your first client</p>
+                  <p className="mt-2 text-sm font-medium text-foreground">{t("dashboard.noCustomers")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.addFirst")}</p>
                 </div>
               )}
             </div>

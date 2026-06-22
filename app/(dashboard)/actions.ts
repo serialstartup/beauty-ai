@@ -365,6 +365,7 @@ export async function updateBusiness(id: string, formData: {
   working_hours_start?: string
   working_hours_end?: string
   working_days?: number[]
+  phone?: string
 }) {
   const supabase = await createClient()
   const { data: userData } = await supabase.auth.getUser()

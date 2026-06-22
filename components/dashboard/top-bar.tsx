@@ -23,6 +23,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { getNotifications } from "@/app/(dashboard)/actions"
+import { useLanguage } from "@/lib/i18n"
+import { LanguageToggle } from "./language-toggle"
 
 interface TopBarProps {
   title: string
@@ -31,18 +33,6 @@ interface TopBarProps {
   showNewBooking?: boolean
   profile?: any
 }
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Calendar", href: "/calendar", icon: CalendarDays },
-  { name: "Appointments", href: "/appointments", icon: ClipboardListIcon },
-  { name: "Customers", href: "/customers", icon: Users },
-  { name: "Services", href: "/services", icon: Scissors },
-  { name: "Campaigns", href: "/campaigns", icon: Megaphone },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "AI Settings", href: "/ai-settings", icon: Bot },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-]
 
 export function TopBar({
   title,
@@ -56,6 +46,19 @@ export function TopBar({
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState<{ id: string; title: string; description: string; time: string; type: string }[]>([])
   const pathname = usePathname()
+  const { t } = useLanguage()
+
+  const navigation = [
+    { name: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { name: t("nav.calendar"), href: "/calendar", icon: CalendarDays },
+    { name: t("nav.appointments"), href: "/appointments", icon: ClipboardListIcon },
+    { name: t("nav.customers"), href: "/customers", icon: Users },
+    { name: t("nav.services"), href: "/services", icon: Scissors },
+    { name: t("nav.campaigns"), href: "/campaigns", icon: Megaphone },
+    { name: t("nav.messages"), href: "/messages", icon: MessageSquare },
+    { name: t("nav.aiSettings"), href: "/ai-settings", icon: Bot },
+    { name: t("nav.analytics"), href: "/analytics", icon: BarChart3 },
+  ]
 
   useEffect(() => {
     getNotifications().then(setNotifications).catch(() => {})
@@ -93,6 +96,9 @@ export function TopBar({
 
         {/* Right side */}
         <div className="flex items-center gap-2 md:gap-3">
+          {/* Language Toggle */}
+          <LanguageToggle />
+
           {/* Notifications */}
           <div className="relative">
             <button 
@@ -120,11 +126,11 @@ export function TopBar({
                 />
                 <div className="absolute right-0 z-20 mt-2 w-72 origin-top-right rounded-xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5 animate-in fade-in zoom-in duration-150">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-border mb-1">
-                    <h3 className="text-sm font-bold text-foreground">Notifications</h3>
+                    <h3 className="text-sm font-bold text-foreground">{t("topbar.notifications")}</h3>
                   </div>
                   {notifications.length === 0 ? (
                     <div className="py-6 text-center text-sm text-muted-foreground">
-                      No new notifications.
+                      {t("topbar.noNotifications")}
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -168,7 +174,7 @@ export function TopBar({
                       {profile?.full_name || "User"}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      Manager
+                      {t("topbar.manager")}
                     </p>
                   </div>
 
@@ -178,7 +184,7 @@ export function TopBar({
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
                   >
                     <Settings className="h-4 w-4" />
-                    <span>Profile</span>
+                    <span>{t("topbar.profile")}</span>
                   </Link>
 
                   <button
@@ -189,7 +195,7 @@ export function TopBar({
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-destructive transition-all hover:bg-destructive/10"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span>Log Out</span>
+                    <span>{t("topbar.logOut")}</span>
                   </button>
                 </div>
               </>
@@ -246,7 +252,7 @@ export function TopBar({
                 )}
               >
                 <Settings className="h-5 w-5" />
-                Settings
+                {t("nav.settings")}
               </Link>
             </div>
           </nav>

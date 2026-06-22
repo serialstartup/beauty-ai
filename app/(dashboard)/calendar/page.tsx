@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
+import { getServerT } from "@/lib/i18n/server"
 import { AdvancedCalendar } from "@/components/dashboard/advanced-calendar"
 import { TopBar } from "@/components/dashboard/top-bar"
 
 export default async function CalendarPage() {
-  const supabase = await createClient()
+  const [supabase, t] = await Promise.all([createClient(), getServerT()])
 
   // Fetch all business appointments for the high-granularity calendar
   const { data: appointments } = await supabase
@@ -37,8 +38,8 @@ export default async function CalendarPage() {
   return (
     <div className="flex flex-col h-full bg-muted/10">
       <TopBar
-        title="Service Schedule"
-        subtitle="Full weekly view with 15-minute precision"
+        title={t("calendar.title")}
+        subtitle={t("calendar.subtitle")}
         profile={profile}
       />
       <div className="flex-1 p-6">

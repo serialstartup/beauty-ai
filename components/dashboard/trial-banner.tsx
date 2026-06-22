@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { AlertTriangle, Clock, CreditCard, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/lib/i18n"
 
 interface TrialBannerProps {
   subscriptionStatus: string
@@ -10,6 +11,7 @@ interface TrialBannerProps {
 }
 
 export function TrialBanner({ subscriptionStatus, trialDaysLeft }: TrialBannerProps) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
 
   const handleCheckout = async () => {
@@ -57,14 +59,14 @@ export function TrialBanner({ subscriptionStatus, trialDaysLeft }: TrialBannerPr
           <Clock className="h-4 w-4 shrink-0" />
         )}
         {isPastDue ? (
-          <span>Payment failed — your subscription is paused. Update your payment method to restore access.</span>
+          <span>{t("trialBanner.paymentFailed")}</span>
         ) : (
           <span>
-            Free Trial —{" "}
+            {t("trialBanner.freeTrialLabel")}{" "}
             <strong>
-              {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining
+              {trialDaysLeft} {trialDaysLeft !== 1 ? t("trialBanner.daysRemaining") : t("trialBanner.dayRemaining")}
             </strong>
-            . Subscribe to keep your AI receptionist active after the trial.
+            {t("trialBanner.subscribeDesc")}
           </span>
         )}
       </div>
@@ -86,7 +88,7 @@ export function TrialBanner({ subscriptionStatus, trialDaysLeft }: TrialBannerPr
         ) : (
           <CreditCard className="h-3.5 w-3.5" />
         )}
-        {isPastDue ? "Update Payment" : "Subscribe to Pro"}
+        {isPastDue ? t("trialBanner.updatePayment") : t("trialBanner.subscribeToPro")}
       </button>
     </div>
   )

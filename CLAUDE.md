@@ -358,6 +358,13 @@ Resolved (2026-06-12 second batch):
 Resolved (2026-06-14):
 33. ✅ Stripe subscription integration: migration 007, lib/stripe.ts, checkout/portal/webhook API routes, Settings billing UI (trialing/active/past_due/canceled states).
 
+Resolved (2026-06-18):
+34. ✅ Full i18n (TR/EN) — tüm dashboard sayfaları ve componentleri çevrildi.
+35. ✅ lib/i18n/translations.ts oluşturuldu — server/client shared data dosyası.
+36. ✅ getServerT() düzeltildi — "use client" boundary sorunu giderildi, server component çevirileri çalışıyor.
+37. ✅ Trial banner, subscription gate, onboarding checklist, wizard, help center çevrildi.
+38. ✅ Settings (billing + profile), AI Settings, Integrations, Messages, Campaigns, Analytics çevrildi.
+
 ## Meta Setup Notes
 
 Never write API keys, access tokens, app secrets, verify tokens, or private phone
@@ -485,12 +492,15 @@ Do not run destructive git commands unless explicitly asked.
 9. ✅ Live test: human takeover + human reply + polling + emoji toggle (2026-06-12).
 10. ✅ AI context improvements + Business Context panel + Help Center email (2026-06-12).
 11. ✅ Add RESEND_API_KEY + RESEND_TO_EMAIL to Vercel env.
-12. Fill AI Settings, Services, Working Hours (manual data entry). ← kullanıcı yapar
+12. ✅ Fill AI Settings, Services, Working Hours (manual data entry). ← kullanıcı yapar
 13. Test contact form + AI context (phone/working days) via WhatsApp.
 14. Prepare demo/pilot customer flow.
 15. ✅ Stripe subscription integration (2026-06-14).
-16. Stripe: Vercel env vars + Stripe Dashboard webhook kayıt + end-to-end test. ← NEXT
-17. Move toward self-serve WhatsApp onboarding.
+16. Stripe: Vercel env vars + Stripe Dashboard webhook kayıt + end-to-end test.
+17. ✅ Full i18n TR/EN — tüm dashboard çevrildi (2026-06-18).
+18. Instagram DM integration (webhook + AI agent). ← NEXT
+19. Meta Tech Provider başvurusu (manuel, paralel).
+20. Self-serve WhatsApp onboarding (Integrations wizard V2).
 
 
 # NOTE: Whenever we change facebook access token, we need to start this command: 

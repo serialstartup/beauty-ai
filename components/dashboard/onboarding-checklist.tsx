@@ -1,5 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import { CheckCircle2, Circle, ChevronRight, Zap } from "lucide-react"
+import { useLanguage } from "@/lib/i18n"
 
 interface OnboardingChecklistProps {
   steps: {
@@ -12,6 +15,7 @@ interface OnboardingChecklistProps {
 }
 
 export function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
+  const { t } = useLanguage()
   const completedCount = steps.filter((s) => s.done).length
   const total = steps.length
 
@@ -26,11 +30,11 @@ export function OnboardingChecklist({ steps }: OnboardingChecklistProps) {
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-bold text-foreground">
-              Set up your workspace
+              {t("dashboard.setupTitle")}
             </h3>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Complete these steps to get the most out of Receptionist OS
+            {t("dashboard.setupDesc")}
           </p>
         </div>
         <span className="shrink-0 text-xs font-semibold text-primary">

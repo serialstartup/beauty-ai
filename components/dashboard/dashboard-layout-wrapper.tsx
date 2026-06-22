@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Sidebar } from "./sidebar"
 import { TrialBanner } from "./trial-banner"
 import { SubscriptionGate } from "./subscription-gate"
+import { LanguageProvider } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 interface Subscription {
@@ -49,18 +50,21 @@ export function DashboardLayoutWrapper({
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="hidden md:block">
-          <Sidebar profile={profile} isCollapsed={false} onToggle={() => {}} />
+      <LanguageProvider>
+        <div className="min-h-screen bg-background">
+          <div className="hidden md:block">
+            <Sidebar profile={profile} isCollapsed={false} onToggle={() => {}} />
+          </div>
+          <main className="md:pl-60 transition-all duration-300">
+            {children}
+          </main>
         </div>
-        <main className="md:pl-60 transition-all duration-300">
-          {children}
-        </main>
-      </div>
+      </LanguageProvider>
     )
   }
 
   return (
+    <LanguageProvider>
     <div className="min-h-screen bg-background">
       {isExpired && (
         <SubscriptionGate businessName={subscription?.businessName} />
@@ -80,5 +84,6 @@ export function DashboardLayoutWrapper({
         {children}
       </main>
     </div>
+    </LanguageProvider>
   )
 }

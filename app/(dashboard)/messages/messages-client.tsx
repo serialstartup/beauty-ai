@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { getConversationMessages, toggleAITakeover, sendHumanReply, getConversations, clearUnreadCount } from "@/app/(dashboard)/actions"
 import { toast } from "sonner"
 import { TopBar } from "@/components/dashboard/top-bar"
+import { useLanguage } from "@/lib/i18n"
 
 interface Conversation {
   id: string
@@ -36,6 +37,7 @@ interface MessagesClientProps {
 }
 
 export function MessagesClient({ profile, conversations }: MessagesClientProps) {
+  const { t } = useLanguage()
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -61,14 +63,13 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
     try {
       const data = await getConversationMessages(id)
       setMessages(data as Message[])
-      // Clear unread badge locally + persist to DB
       setLocalConversations((prev) =>
         prev.map((c) => (c.id === id ? { ...c, unread_count: 0 } : c))
       )
       clearUnreadCount(id).catch(() => {})
     } catch {
       setMessages([])
-      toast.error("Failed to load messages.")
+      toast.error(t("messages.failedLoad"))
     } finally {
       setLoadingMessages(false)
     }
@@ -85,7 +86,7 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
         setMessages((prev) => [...prev, result.message as Message])
       }
     } catch (err: any) {
-      toast.error(err?.message ?? "Failed to send message.")
+      toast.error(err?.message ?? t("messages.failedSend"))
     } finally {
       setSendingReply(false)
     }
@@ -101,13 +102,12 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
         prev.map((c) => (c.id === selectedConversation.id ? { ...c, ai_enabled: next } : c))
       )
     } catch {
-      // revert on error — no state change
+      // revert on error
     } finally {
       setTogglingAI(false)
     }
   }
 
-  // Poll messages for selected conversation every 4 seconds
   useEffect(() => {
     if (!selectedId) return
     const poll = async () => {
@@ -121,14 +121,13 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
           return lastPrev !== lastNew ? incoming : prev
         })
       } catch {
-        // silent — don't disrupt UX on poll failure
+        // silent
       }
     }
     const interval = setInterval(poll, 4000)
     return () => clearInterval(interval)
   }, [selectedId])
 
-  // Poll conversations list every 10 seconds
   useEffect(() => {
     const poll = async () => {
       if (document.visibilityState !== "visible") return
@@ -158,8 +157,8 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <TopBar
-        title="Messages"
-        subtitle="Manage AI and human conversations across platforms."
+        title={t("messages.title")}
+        subtitle={t("messages.subtitle")}
         profile={profile}
       />
 
@@ -170,7 +169,7 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search conversations..."
+                placeholder={t("messages.searchPh")}
                 className="pl-8 bg-background"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -181,7 +180,7 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-sm text-muted-foreground">
                 <MessageSquare className="h-8 w-8 mb-2 opacity-40" />
-                {search ? "No matching conversations." : "No conversations yet."}
+                {search ? t("messages.noMatchConvos") : t("messages.noConvos")}
               </div>
             ) : (
               <div className="flex flex-col">
@@ -210,7 +209,7 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
                     <div className="flex flex-1 flex-col gap-0.5 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <span className={cn("text-sm truncate", conv.unread_count > 0 ? "font-bold" : "font-semibold")}>
-                          {conv.customers?.name ?? "Unknown"}
+                          {conv.customers?.name ?? t("common.unknown")}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-[10px] text-muted-foreground">
@@ -235,7 +234,7 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
                             : "bg-orange-500/10 text-orange-700 dark:text-orange-400"
                         )}
                       >
-                        {conv.ai_enabled ? "AI Active" : "Human"}
+                        {conv.ai_enabled ? t("messages.aiActive") : t("messages.human")}
                       </Badge>
                     </div>
                   </button>
@@ -249,7 +248,6 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
         <div className="flex flex-1 flex-col overflow-hidden bg-background">
           {selectedConversation ? (
             <>
-              {/* Chat Header */}
               <div className="flex h-16 items-center justify-between border-b bg-card px-4 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="relative">
@@ -267,11 +265,11 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold leading-none">
-                      {selectedConversation.customers?.name ?? "Unknown"}
+                      {selectedConversation.customers?.name ?? t("common.unknown")}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1 capitalize">
                       {selectedConversation.platform} ·{" "}
-                      {selectedConversation.ai_enabled ? "AI Yanıtlıyor" : "Manuel Mod"}
+                      {selectedConversation.ai_enabled ? t("messages.aiAnswering") : t("messages.manualMode")}
                     </p>
                   </div>
                 </div>
@@ -283,28 +281,21 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
                   className="flex items-center gap-1.5"
                 >
                   {selectedConversation.ai_enabled ? (
-                    <>
-                      <UserCheck className="h-3.5 w-3.5" />
-                      Take Over
-                    </>
+                    <><UserCheck className="h-3.5 w-3.5" />{t("messages.takeOver")}</>
                   ) : (
-                    <>
-                      <Bot className="h-3.5 w-3.5" />
-                      Hand Back to AI
-                    </>
+                    <><Bot className="h-3.5 w-3.5" />{t("messages.handBack")}</>
                   )}
                 </Button>
               </div>
 
-              {/* Messages area */}
               <div className="flex-1 overflow-y-auto px-6 py-4 bg-muted/20">
                 {loadingMessages ? (
                   <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-                    Loading messages...
+                    {t("messages.loading")}
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-                    No messages in this conversation yet.
+                    {t("messages.noMsgs")}
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -339,12 +330,11 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
                 )}
               </div>
 
-              {/* Input — Human Mode only */}
               {!selectedConversation.ai_enabled ? (
                 <div className="border-t bg-card px-4 py-3 shrink-0">
                   <form className="flex items-center gap-2" onSubmit={handleSendReply}>
                     <Input
-                      placeholder="Type a message..."
+                      placeholder={t("messages.typePh")}
                       className="flex-1 rounded-full bg-background"
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
@@ -360,13 +350,13 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
                     </Button>
                   </form>
                   <p className="text-center text-[10px] text-muted-foreground mt-1.5">
-                    Sending via {selectedConversation.platform} · AI paused
+                    {t("messages.sendingVia")} {selectedConversation.platform} · {t("messages.aiPaused")}
                   </p>
                 </div>
               ) : (
                 <div className="border-t bg-card px-4 py-3 shrink-0">
                   <p className="text-center text-xs text-muted-foreground">
-                    AI is handling this conversation · <button onClick={handleToggleAI} className="underline hover:text-foreground transition-colors">Take Over</button> to reply manually
+                    {t("messages.aiHandling")} <button onClick={handleToggleAI} className="underline hover:text-foreground transition-colors">{t("messages.takeOverLink")}</button>
                   </p>
                 </div>
               )}
@@ -376,9 +366,9 @@ export function MessagesClient({ profile, conversations }: MessagesClientProps) 
               <div className="rounded-full bg-muted p-5 mb-4">
                 <MessageSquare className="h-10 w-10 text-muted-foreground/60" />
               </div>
-              <h3 className="text-base font-semibold text-foreground">Select a conversation</h3>
+              <h3 className="text-base font-semibold text-foreground">{t("messages.selectConv")}</h3>
               <p className="text-muted-foreground max-w-xs mt-1.5 text-sm">
-                Choose a customer from the list to view messages and manage AI responses.
+                {t("messages.selectConvDesc")}
               </p>
             </div>
           )}

@@ -35,14 +35,14 @@ export async function POST(request: Request) {
             const messageText = messaging.message.text
 
             // Multi-tenant: Look up business by Instagram User ID
-            const { data: integration } = await supabase
+            const { data: integration, error: integrationError } = await supabase
               .from("business_integrations")
               .select("business_id, ig_access_token")
               .eq("ig_user_id", recipientId)
               .eq("is_active", true)
               .single()
 
-            if (!integration || !messageText) continue
+            if (integrationError || !integration || !messageText) continue
 
             const businessId = integration.business_id
             const customerName = `IG User_${senderId.slice(-4)}`

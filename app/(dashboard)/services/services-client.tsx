@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, Search, Scissors, X, Loader2 } from "lucide-react
 import { createService, updateService, deleteService } from "../actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useLanguage } from "@/lib/i18n"
 
 type Category = "all" | "hair" | "nails" | "skin" | "massage"
 
@@ -24,9 +25,9 @@ const categoryColors: Record<string, string> = {
 }
 
 export function ServicesClient({ services, profile }: ServicesClientProps) {
+  const { t } = useLanguage()
   const [activeCategory, setActiveCategory] = useState<Category>("all")
   const [searchQuery, setSearchQuery] = useState("")
-  // Set the first service as safely selected if array exists, otherwise null
   const [selectedService, setSelectedService] = useState<any | null>(
     services.length > 0 ? services[0] : null
   )
@@ -57,13 +58,13 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this service?")) return
+    if (!confirm(t("services.deleteConfirm"))) return
     try {
       await deleteService(id)
-      toast.success("Service deleted.")
+      toast.success(t("services.deleted"))
       router.refresh()
     } catch {
-      toast.error("Failed to delete service.")
+      toast.error(t("services.failedDelete"))
     }
   }
 
@@ -78,39 +79,30 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
         duration_minutes: parseInt(formData.duration_minutes),
         description: formData.description,
       }
-
       if (isEditing && selectedService) {
         await updateService(selectedService.id, payload)
+        toast.success(t("services.updated"))
       } else {
         await createService(payload)
+        toast.success(t("services.created"))
       }
-
       setIsModalOpen(false)
       setIsEditing(false)
-      setFormData({
-        name: "",
-        category: "HAIR",
-        price: "",
-        duration_minutes: "30",
-        description: "",
-      })
-      toast.success(isEditing ? "Service updated." : "Service created.")
+      setFormData({ name: "", category: "HAIR", price: "", duration_minutes: "30", description: "" })
       router.refresh()
     } catch {
-      toast.error("Failed to save service.")
+      toast.error(t("services.failedSave"))
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const filteredServices = services.filter((s) => {
-    const matchesCategory =
-      activeCategory === "all" || s.category?.toLowerCase() === activeCategory
+    const matchesCategory = activeCategory === "all" || s.category?.toLowerCase() === activeCategory
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
   })
 
-  // Format duration
   const formatDuration = (mins: number) => {
     if (mins >= 60) {
       const h = Math.floor(mins / 60)
@@ -123,87 +115,75 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
   return (
     <div>
       <TopBar
-        title="Services & Pricing"
-        subtitle="Manage your salon menu, pricing, and service durations."
-        searchPlaceholder="Search services..."
+        title={t("services.title")}
+        subtitle={t("services.subtitle")}
+        searchPlaceholder={t("services.searchPh")}
+        profile={profile}
       />
 
       <div className="p-6">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 items-center gap-4 w-full sm:w-auto">
-            <h2 className="text-lg font-bold text-foreground">Services Menu</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("services.menu")}</h2>
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search services..."
+                placeholder={t("services.searchPh")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 w-full rounded-lg border border-border bg-background pr-4 pl-9 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
               />
             </div>
           </div>
-          <button 
+          <button
             onClick={() => {
               setIsEditing(false)
-              setFormData({
-                name: "",
-                category: "HAIR",
-                price: "",
-                duration_minutes: "30",
-                description: "",
-              })
+              setFormData({ name: "", category: "HAIR", price: "", duration_minutes: "30", description: "" })
               setIsModalOpen(true)
             }}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
           >
             <Plus className="h-4 w-4" />
-            Add New Service
+            {t("services.addNew")}
           </button>
         </div>
 
         {services.length === 0 || filteredServices.length === 0 ? (
           <div className="mt-6">
-            <EmptyState 
+            <EmptyState
               icon={Scissors}
-              title={services.length === 0 ? "No services offered yet" : "No results found"}
-              description={services.length === 0 
-                ? "Your menu is currently empty. Add the services you offer to start accepting appointments."
-                : `We couldn't find any services matching "${searchQuery}".`
-              }
+              title={services.length === 0 ? t("services.noServices") : t("services.noResults")}
+              description={services.length === 0 ? t("services.noServicesDesc") : `"${searchQuery}"`}
               action={services.length === 0 && (
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                 >
-                  Add Service
+                  {t("services.addService")}
                 </button>
               )}
             />
           </div>
         ) : (
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Services Table */}
             <div className="col-span-1 overflow-hidden rounded-xl border border-border bg-card lg:col-span-2 flex flex-col min-h-[500px]">
-              {/* Category Filters + Search */}
               <div className="flex flex-col items-start gap-4 border-b border-border px-6 py-4">
                 <div className="flex flex-wrap items-center gap-1">
-                  {(["all", "hair", "nails", "skin", "massage"] as Category[]).map(
-                    (cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={cn(
-                          "rounded-lg px-3.5 py-1.5 text-sm font-medium capitalize transition-all focus:outline-none",
-                          activeCategory === cat
-                            ? "bg-accent text-foreground font-semibold shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {cat === "all" ? "All" : cat}
-                      </button>
-                    )
-                  )}
+                  {(["all", "hair", "nails", "skin", "massage"] as Category[]).map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={cn(
+                        "rounded-lg px-3.5 py-1.5 text-sm font-medium capitalize transition-all focus:outline-none",
+                        activeCategory === cat
+                          ? "bg-accent text-foreground font-semibold shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {cat === "all" ? t("services.all") : cat}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -212,17 +192,14 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
                       {[
-                        "Service Name",
-                        "Category",
-                        "Duration",
-                        "Price",
-                        "Status",
-                        "Actions",
+                        t("services.name"),
+                        t("services.category"),
+                        t("services.duration"),
+                        t("services.price"),
+                        t("services.status"),
+                        t("services.actions"),
                       ].map((h) => (
-                        <th
-                          key={h}
-                          className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                        >
+                        <th key={h} className="px-6 py-3 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                           {h}
                         </th>
                       ))}
@@ -239,54 +216,30 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                         )}
                       >
                         <td className="px-6 py-4">
-                          <p className="text-sm font-medium text-foreground">
-                            {service.name}
-                          </p>
+                          <p className="text-sm font-medium text-foreground">{service.name}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={cn(
-                              "rounded-full px-2.5 py-1 text-xs font-semibold tracking-wider uppercase",
-                              categoryColors[service.category?.toUpperCase()] || "bg-muted text-muted-foreground"
-                            )}
-                          >
+                          <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold tracking-wider uppercase", categoryColors[service.category?.toUpperCase()] || "bg-muted text-muted-foreground")}>
                             {service.category || "OTHER"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-foreground">
-                          {formatDuration(service.duration_minutes)}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-semibold text-foreground">
-                          ${service.price}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-foreground">{formatDuration(service.duration_minutes)}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-foreground">${service.price}</td>
                         <td className="px-6 py-4">
-                          <span
-                            className={cn(
-                              "rounded-full px-2.5 py-1 text-xs font-semibold",
-                              service.is_active
-                                ? "bg-success/10 text-success"
-                                : "bg-muted text-muted-foreground"
-                            )}
-                          >
-                            {service.is_active ? "Active" : "Inactive"}
+                          <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", service.is_active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>
+                            {service.is_active ? t("common.active") : t("common.inactive")}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEdit(service)
-                              }}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleEdit(service) }}
                               className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDelete(service.id)
-                              }}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDelete(service.id) }}
                               className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -298,7 +251,7 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                     {filteredServices.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-6 py-8 text-center text-sm text-muted-foreground">
-                          No services match your filters.
+                          {t("services.noMatch")}
                         </td>
                       </tr>
                     )}
@@ -307,89 +260,60 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
               </div>
             </div>
 
-            {/* Service Details Panel */}
             {selectedService ? (
               <div className="rounded-xl border border-border bg-card p-6 h-fit">
-                <h3 className="text-lg font-bold text-foreground">
-                  Service Details
-                </h3>
-
+                <h3 className="text-lg font-bold text-foreground">{t("services.details")}</h3>
                 <div className="mt-5 space-y-5">
                   <div>
                     <h4 className="text-lg font-semibold text-foreground">{selectedService.name}</h4>
                     <p className="text-primary font-medium mt-1">${selectedService.price} • {formatDuration(selectedService.duration_minutes)}</p>
                   </div>
-
                   <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Description
-                    </p>
+                    <p className="text-sm font-medium text-foreground">{t("services.description")}</p>
                     <p className="mt-1.5 rounded-lg border border-border bg-accent/30 p-3 text-sm leading-relaxed text-muted-foreground min-h-[80px]">
-                      {selectedService.description || "No description provided."}
+                      {selectedService.description || t("services.noDesc")}
                     </p>
                   </div>
-
-                  {/* Staff Assignment & Buffer removed for MVP as per plan */}
-
-                  <button 
+                  <button
                     onClick={() => handleEdit(selectedService)}
                     className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-primary hover:bg-accent/80 transition-colors mt-4"
                   >
-                    Edit Details
+                    {t("services.editDetails")}
                   </button>
                 </div>
               </div>
             ) : (
-               <div className="rounded-xl border border-dashed border-border bg-card/50 p-6 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
-                  <Scissors className="h-8 w-8 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">Select a service to view its details</p>
-               </div>
+              <div className="rounded-xl border border-dashed border-border bg-card/50 p-6 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+                <Scissors className="h-8 w-8 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">{t("services.selectDetails")}</p>
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Add Service Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-foreground">
-                {isEditing ? "Edit Service" : "Add New Service"}
+                {isEditing ? t("services.edit") : t("services.addNew")}
               </h3>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
+              <button onClick={() => setIsModalOpen(false)} className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                  Service Name
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Signature Haircut"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
-                />
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.name")}</label>
+                <input required type="text" placeholder="e.g. Signature Haircut" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all cursor-pointer"
-                  >
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.category")}</label>
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all cursor-pointer">
                     <option value="HAIR">Hair</option>
                     <option value="NAILS">Nails</option>
                     <option value="SKIN">Skin</option>
@@ -397,73 +321,37 @@ export function ServicesClient({ services, profile }: ServicesClientProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                    Price ($)
-                  </label>
-                  <input
-                    required
-                    type="number"
-                    step="0.01"
-                    placeholder="25.00"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
-                  />
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.price")} ($)</label>
+                  <input required type="number" step="0.01" placeholder="25.00" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                  Duration (Minutes)
-                </label>
-                <select
-                  value={formData.duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all cursor-pointer"
-                >
-                  <option value="15">15 mins</option>
-                  <option value="30">30 mins</option>
-                  <option value="45">45 mins</option>
-                  <option value="60">1 hour</option>
-                  <option value="90">1 hour 30 mins</option>
-                  <option value="120">2 hours</option>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.duration")}</label>
+                <select value={formData.duration_minutes} onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })} className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all cursor-pointer">
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="45">45 min</option>
+                  <option value="60">60 min</option>
+                  <option value="90">90 min</option>
+                  <option value="120">120 min</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
-                  Description
-                </label>
-                <textarea
-                  placeholder="Describe your service..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full h-24 resize-none rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
-                />
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">{t("services.description")}</label>
+                <textarea placeholder="Describe your service..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full h-24 resize-none rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all" />
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
-                >
-                  Cancel
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors">{t("common.cancel")}</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-70 transition-all flex items-center justify-center gap-2 shadow-sm">
+                  {isSubmitting ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" />{isEditing ? t("services.saving") : t("services.creating")}</>
+                  ) : (
+                    isEditing ? t("services.saveChanges") : t("services.createService")
+                  )}
                 </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-70 transition-all flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {isEditing ? "Saving..." : "Creating..."}
-                      </>
-                    ) : (
-                      isEditing ? "Save Changes" : "Create Service"
-                    )}
-                  </button>
               </div>
             </form>
           </div>

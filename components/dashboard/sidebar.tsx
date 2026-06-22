@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/lib/i18n"
 // import { signOut } from "@/app/(auth)/actions"
 import {
   LayoutDashboard,
@@ -20,20 +21,6 @@ import {
   MessageSquare,
 } from "lucide-react"
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Calendar", href: "/calendar", icon: CalendarDays },
-  { name: "Appointments", href: "/appointments", icon: ClipboardListIcon },
-  { name: "Customers", href: "/customers", icon: Users },
-  { name: "Services", href: "/services", icon: Scissors },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Campaigns", href: "/campaigns", icon: Megaphone },
-  { name: "Integrations", href: "/integrations", icon: Sparkles },
-  { name: "AI Settings", href: "/ai-settings", icon: Bot },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Help Center", href: "/help", icon: HelpCircle },
-]
-
 // const bottomNavigation = [
 //   { name: "Settings", href: "/settings", icon: Settings },
 // ]
@@ -50,6 +37,21 @@ export function Sidebar({
   profile,
 }: SidebarProps) {
   const pathname = usePathname()
+  const { t } = useLanguage()
+
+  const navigation = [
+    { name: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { name: t("nav.calendar"), href: "/calendar", icon: CalendarDays },
+    { name: t("nav.appointments"), href: "/appointments", icon: ClipboardListIcon },
+    { name: t("nav.customers"), href: "/customers", icon: Users },
+    { name: t("nav.services"), href: "/services", icon: Scissors },
+    { name: t("nav.messages"), href: "/messages", icon: MessageSquare },
+    { name: t("nav.campaigns"), href: "/campaigns", icon: Megaphone },
+    { name: t("nav.integrations"), href: "/integrations", icon: Sparkles },
+    { name: t("nav.aiSettings"), href: "/ai-settings", icon: Bot },
+    { name: t("nav.analytics"), href: "/analytics", icon: BarChart3 },
+    { name: t("nav.helpCenter"), href: "/help", icon: HelpCircle },
+  ]
 
   return (
     <aside

@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import { CheckCircle2, Loader2, Lock } from "lucide-react"
+import { useLanguage } from "@/lib/i18n"
 
 interface SubscriptionGateProps {
   businessName?: string
 }
 
 export function SubscriptionGate({ businessName }: SubscriptionGateProps) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
 
   const handleCheckout = async () => {
@@ -29,10 +31,10 @@ export function SubscriptionGate({ businessName }: SubscriptionGateProps) {
         </div>
 
         <h2 className="text-xl font-bold text-foreground">
-          {businessName ? `${businessName} —` : ""} Free trial ended
+          {businessName ? `${businessName} —` : ""} {t("gate.trialEnded")}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Subscribe to Pro to continue using Receptionist OS and keep your AI receptionist active.
+          {t("gate.desc")}
         </p>
 
         <div className="mt-6 space-y-2.5 text-left">
@@ -54,14 +56,12 @@ export function SubscriptionGate({ businessName }: SubscriptionGateProps) {
           disabled={loading}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70"
         >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : null}
-          {loading ? "Opening checkout..." : "Subscribe to Pro"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {loading ? t("gate.opening") : t("gate.subscribeToPro")}
         </button>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Secure payment via Stripe · Cancel anytime
+          {t("gate.securePayment")}
         </p>
       </div>
     </div>

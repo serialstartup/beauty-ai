@@ -69,17 +69,16 @@ export async function POST(request: Request) {
       const supabase = createAdminClient()
 
       // 3. Identify Business by Phone Number ID (Multi-tenant)
-      // Look up which business owns this phone_number_id
-      const { data: integration } = await supabase
+      const { data: integration, error: integrationError } = await supabase
         .from("business_integrations")
         .select("business_id, wa_access_token")
         .eq("wa_phone_number_id", phoneNumberId)
         .eq("is_active", true)
         .single()
 
-      if (!integration) {
-        console.warn("No active integration found for phone_number_id:", phoneNumberId)
-        return new NextResponse("OK", { status: 200 }) // Don't error, Meta doesn't like non-200
+      if (integrationError || !integration) {
+        console.warn("Integration lookup failed for phone_number_id:", phoneNumberId, integrationError?.message)
+        return new NextResponse("OK", { status: 200 })
       }
 
       const businessId = integration.business_id

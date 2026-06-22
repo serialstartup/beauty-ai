@@ -18,15 +18,9 @@ import {
 import { updateBusiness, updateProfile } from "../actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useLanguage } from "@/lib/i18n"
 
 type SettingsSection = "profile" | "business" | "billing" | "notifications"
-
-const sections = [
-  { key: "business" as const, label: "Business Info", icon: Building2 },
-  { key: "profile" as const, label: "Your Profile", icon: User },
-  { key: "billing" as const, label: "Billing", icon: CreditCard },
-  { key: "notifications" as const, label: "Notifications", icon: Bell },
-]
 
 interface SettingsClientProps {
   business: any
@@ -35,12 +29,20 @@ interface SettingsClientProps {
 }
 
 export function SettingsClient({ business, profile, billingStatus }: SettingsClientProps) {
+  const { t } = useLanguage()
   const [activeSection, setActiveSection] = useState<SettingsSection>("business")
   const [isSaving, setIsSaving] = useState(false)
   const [billingLoading, setBillingLoading] = useState(false)
   const router = useRouter()
 
-  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const sections = [
+    { key: "business" as const, label: t("settings.businessInfo"), icon: Building2 },
+    { key: "profile" as const, label: t("settings.yourProfile"), icon: User },
+    { key: "billing" as const, label: t("settings.billing"), icon: CreditCard },
+    { key: "notifications" as const, label: t("settings.notifications"), icon: Bell },
+  ]
+
+  const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
   const [businessData, setBusinessData] = useState({
     name: business?.name || "",
@@ -48,6 +50,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
     working_hours_start: business?.working_hours_start || "09:00",
     working_hours_end: business?.working_hours_end || "18:00",
     working_days: (business?.working_days as number[]) || [1, 2, 3, 4, 5, 6],
+    phone: business?.phone || "",
   })
 
   const [profileData, setProfileData] = useState({
@@ -57,10 +60,10 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
   useEffect(() => {
     if (billingStatus === "success") {
       setActiveSection("billing")
-      toast.success("Subscription activated! Welcome to Pro.")
+      toast.success(t("settings.subscriptionActivated"))
     } else if (billingStatus === "cancelled") {
       setActiveSection("billing")
-      toast.info("Checkout was cancelled.")
+      toast.info(t("settings.checkoutCancelled"))
     }
   }, [billingStatus])
 
@@ -69,10 +72,10 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
     setIsSaving(true)
     try {
       await updateBusiness(business.id, businessData)
-      toast.success("Business settings saved.")
+      toast.success(t("settings.businessInfoSaved"))
       router.refresh()
     } catch {
-      toast.error("Failed to save business settings.")
+      toast.error(t("settings.failedSaveBusiness"))
     } finally {
       setIsSaving(false)
     }
@@ -82,10 +85,10 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
     setIsSaving(true)
     try {
       await updateProfile(profileData)
-      toast.success("Profile saved.")
+      toast.success(t("settings.profileSaved"))
       router.refresh()
     } catch {
-      toast.error("Failed to save profile settings.")
+      toast.error(t("settings.failedSaveProfile"))
     } finally {
       setIsSaving(false)
     }
@@ -96,11 +99,8 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
     try {
       const res = await fetch("/api/stripe/checkout", { method: "POST" })
       const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        toast.error("Failed to open checkout.")
-      }
+      if (data.url) window.location.href = data.url
+      else toast.error("Failed to open checkout.")
     } catch {
       toast.error("Something went wrong.")
     } finally {
@@ -113,11 +113,8 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
     try {
       const res = await fetch("/api/stripe/portal", { method: "POST" })
       const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        toast.error("Failed to open billing portal.")
-      }
+      if (data.url) window.location.href = data.url
+      else toast.error("Failed to open billing portal.")
     } catch {
       toast.error("Something went wrong.")
     } finally {
@@ -125,14 +122,9 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
     }
   }
 
-  // Subscription helpers
   const subscriptionStatus: string = business?.subscription_status || "trialing"
-  const trialEndsAt: Date | null = business?.trial_ends_at
-    ? new Date(business.trial_ends_at)
-    : null
-  const currentPeriodEnd: Date | null = business?.current_period_end
-    ? new Date(business.current_period_end)
-    : null
+  const trialEndsAt: Date | null = business?.trial_ends_at ? new Date(business.trial_ends_at) : null
+  const currentPeriodEnd: Date | null = business?.current_period_end ? new Date(business.current_period_end) : null
   const cancelAtPeriodEnd: boolean = business?.cancel_at_period_end || false
 
   const trialDaysLeft = trialEndsAt
@@ -150,35 +142,23 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
   const BillingSection = () => (
     <div>
-      <h2 className="text-2xl font-bold text-foreground">Billing</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Manage your subscription and payment details.
-      </p>
+      <h2 className="text-2xl font-bold text-foreground">{t("billing.title")}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{t("billing.subtitle")}</p>
 
-      {/* Status card */}
       <div className="mt-6 rounded-xl border border-border bg-card p-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-foreground">Subscription Plan</h3>
-
+          <h3 className="text-base font-bold text-foreground">{t("billing.subscriptionPlan")}</h3>
           {isActive && (
-            <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold tracking-wider text-success uppercase">
-              Active
-            </span>
+            <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold tracking-wider text-success uppercase">{t("billing.active")}</span>
           )}
           {isTrialing && (
-            <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-blue-500 uppercase">
-              Free Trial
-            </span>
+            <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-blue-500 uppercase">{t("billing.freeTrial")}</span>
           )}
           {(isTrialExpired || isCanceled) && (
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              Inactive
-            </span>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">{t("billing.inactive")}</span>
           )}
           {isPastDue && (
-            <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold tracking-wider text-destructive uppercase">
-              Past Due
-            </span>
+            <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold tracking-wider text-destructive uppercase">{t("billing.pastDue")}</span>
           )}
         </div>
 
@@ -186,10 +166,8 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
           <div>
             {isActive && (
               <>
-                <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                  Current Plan
-                </p>
-                <h4 className="mt-1 text-xl font-bold text-primary">Pro Plan</h4>
+                <p className="text-xs tracking-wider text-muted-foreground uppercase">{t("billing.currentPlan")}</p>
+                <h4 className="mt-1 text-xl font-bold text-primary">{t("billing.proPlan")}</h4>
                 <div className="mt-4 space-y-2.5">
                   {[
                     "AI Receptionist (WhatsApp + Instagram)",
@@ -204,14 +182,11 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                   ))}
                 </div>
                 {cancelAtPeriodEnd && currentPeriodEnd && (
-                  <p className="mt-4 text-sm text-amber-600">
-                    Cancels on {formatDate(currentPeriodEnd)}
-                  </p>
+                  <p className="mt-4 text-sm text-amber-600">{t("billing.cancelledOn")} {formatDate(currentPeriodEnd)}</p>
                 )}
                 {!cancelAtPeriodEnd && currentPeriodEnd && (
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Next billing date:{" "}
-                    <strong className="text-foreground">{formatDate(currentPeriodEnd)}</strong>
+                    {t("billing.nextBilling")} <strong className="text-foreground">{formatDate(currentPeriodEnd)}</strong>
                   </p>
                 )}
               </>
@@ -219,21 +194,19 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
             {isTrialing && (
               <>
-                <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                  Current Plan
-                </p>
-                <h4 className="mt-1 text-xl font-bold text-primary">Free Trial</h4>
+                <p className="text-xs tracking-wider text-muted-foreground uppercase">{t("billing.currentPlan")}</p>
+                <h4 className="mt-1 text-xl font-bold text-primary">{t("billing.freePlanLabel")}</h4>
                 <div className="mt-3 flex items-center gap-2 text-blue-500">
                   <Clock className="h-4 w-4" />
                   <span className="text-sm font-medium">
-                    {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining
+                    {trialDaysLeft} {trialDaysLeft !== 1 ? t("billing.daysRemaining") : t("billing.dayRemaining")}
                   </span>
                 </div>
                 <div className="mt-4 space-y-2.5">
                   {[
-                    "All Pro features included",
-                    "No credit card required",
-                    "AI Receptionist fully active",
+                    t("billing.allProFeatures"),
+                    t("billing.noCreditCard"),
+                    t("billing.aiFullyActive"),
                   ].map((feature) => (
                     <div key={feature} className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-success" />
@@ -243,8 +216,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                 </div>
                 {trialEndsAt && (
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Trial ends on{" "}
-                    <strong className="text-foreground">{formatDate(trialEndsAt)}</strong>
+                    {t("billing.trialEndsOn")} <strong className="text-foreground">{formatDate(trialEndsAt)}</strong>
                   </p>
                 )}
               </>
@@ -252,19 +224,15 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
             {(isTrialExpired || isCanceled) && (
               <>
-                <h4 className="mt-1 text-xl font-bold text-muted-foreground">No Active Plan</h4>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Subscribe to Pro to continue using AI Receptionist.
-                </p>
+                <h4 className="mt-1 text-xl font-bold text-muted-foreground">{t("billing.noActivePlan")}</h4>
+                <p className="mt-2 text-sm text-muted-foreground">{t("billing.noActivePlanDesc")}</p>
               </>
             )}
 
             {isPastDue && (
               <>
-                <h4 className="mt-1 text-xl font-bold text-destructive">Payment Failed</h4>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Your last payment failed. Please update your payment method to keep access.
-                </p>
+                <h4 className="mt-1 text-xl font-bold text-destructive">{t("billing.paymentFailed")}</h4>
+                <p className="mt-2 text-sm text-muted-foreground">{t("billing.paymentFailedDesc")}</p>
               </>
             )}
           </div>
@@ -278,7 +246,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
               >
                 {billingLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 <ExternalLink className="h-4 w-4" />
-                Manage Billing
+                {t("billing.manageBilling")}
               </button>
             )}
 
@@ -289,45 +257,37 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                 className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70"
               >
                 {billingLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {billingLoading ? "Opening..." : "Subscribe to Pro"}
+                {billingLoading ? t("billing.opening") : t("billing.subscribeToPro")}
               </button>
             )}
 
             {isPastDue && (
-              <>
-                <button
-                  onClick={handlePortal}
-                  disabled={billingLoading}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-destructive px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-destructive/90 disabled:opacity-70"
-                >
-                  {billingLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Update Payment Method
-                </button>
-              </>
+              <button
+                onClick={handlePortal}
+                disabled={billingLoading}
+                className="flex items-center justify-center gap-2 rounded-lg bg-destructive px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-destructive/90 disabled:opacity-70"
+              >
+                {billingLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t("billing.updatePayment")}
+              </button>
             )}
           </div>
         </div>
 
-        {/* Trial expiry warning */}
         {isTrialing && trialDaysLeft <= 3 && (
           <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
             <div>
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">
-                Trial ending soon
-              </p>
-              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-500">
-                Subscribe before your trial ends to keep your AI receptionist active.
-              </p>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">{t("billing.trialEnding")}</p>
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-500">{t("billing.trialEndDesc")}</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Pro plan features */}
       {!isActive && (
         <div className="mt-6 rounded-xl border border-border bg-card p-6">
-          <h3 className="text-base font-bold text-foreground">What's included in Pro</h3>
+          <h3 className="text-base font-bold text-foreground">{t("billing.whatsIncluded")}</h3>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
               "AI Receptionist (WhatsApp + Instagram)",
@@ -352,10 +312,9 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
   return (
     <div>
-      <TopBar title="Settings" profile={profile} />
+      <TopBar title={t("settings.title")} profile={profile} />
 
       <div className="flex min-h-[calc(100vh-64px)] flex-col border-t border-border md:flex-row">
-        {/* Sidebar nav */}
         <aside className="w-full shrink-0 border-b border-border bg-card/50 md:w-56 md:border-r md:border-b-0">
           <nav className="flex flex-row gap-1 p-3 md:flex-col">
             {sections.map(({ key, label, icon: Icon }) => (
@@ -376,17 +335,14 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
           </nav>
         </aside>
 
-        {/* Content */}
         <div className="flex-1 p-4 md:p-8">
           {activeSection === "business" && (
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Business Information</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Manage your business details, working hours, and schedule.
-              </p>
+              <h2 className="text-2xl font-bold text-foreground">{t("settings.businessInfo")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("settings.businessInfoDesc")}</p>
 
               <div className="mt-6 rounded-xl border border-border bg-card p-6">
-                <h3 className="text-base font-bold text-foreground">General Profile</h3>
+                <h3 className="text-base font-bold text-foreground">{t("settings.generalProfile")}</h3>
 
                 <div className="mt-5 flex flex-col items-start gap-6 sm:flex-row">
                   <div className="relative">
@@ -402,30 +358,16 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
                   <div className="grid w-full flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-foreground">Business Name</label>
-                      <input
-                        type="text"
-                        value={businessData.name}
-                        onChange={(e) => setBusinessData({ ...businessData, name: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                      />
+                      <label className="mb-1 block text-xs font-medium text-foreground">{t("settings.businessName")}</label>
+                      <input type="text" value={businessData.name} onChange={(e) => setBusinessData({ ...businessData, name: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-foreground">Account Owner</label>
-                      <input
-                        type="text"
-                        readOnly
-                        defaultValue={profile?.full_name || "Admin"}
-                        className="mt-1 w-full cursor-not-allowed rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground outline-none"
-                      />
+                      <label className="mb-1 block text-xs font-medium text-foreground">{t("settings.accountOwner")}</label>
+                      <input type="text" readOnly defaultValue={profile?.full_name || "Admin"} className="mt-1 w-full cursor-not-allowed rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground outline-none" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-foreground">Timezone</label>
-                      <select
-                        value={businessData.timezone}
-                        onChange={(e) => setBusinessData({ ...businessData, timezone: e.target.value })}
-                        className="mt-1 w-full cursor-pointer rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                      >
+                      <label className="mb-1 block text-xs font-medium text-foreground">{t("settings.timezone")}</label>
+                      <select value={businessData.timezone} onChange={(e) => setBusinessData({ ...businessData, timezone: e.target.value })} className="mt-1 w-full cursor-pointer rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
                         <option value="Europe/Istanbul">Europe/Istanbul (UTC+3)</option>
                         <option value="Europe/London">Europe/London (UTC+0/+1)</option>
                         <option value="Europe/Berlin">Europe/Berlin (UTC+1/+2)</option>
@@ -439,26 +381,20 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-foreground">Working Hours Start</label>
-                      <input
-                        type="time"
-                        value={businessData.working_hours_start}
-                        onChange={(e) => setBusinessData({ ...businessData, working_hours_start: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                      />
+                      <label className="mb-1 block text-xs font-medium text-foreground">{t("settings.businessPhone")}</label>
+                      <input type="tel" placeholder="+90 555 123 4567" value={businessData.phone} onChange={(e) => setBusinessData({ ...businessData, phone: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-foreground">Working Hours End</label>
-                      <input
-                        type="time"
-                        value={businessData.working_hours_end}
-                        onChange={(e) => setBusinessData({ ...businessData, working_hours_end: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                      />
+                      <label className="mb-1 block text-xs font-medium text-foreground">{t("settings.workingHoursStart")}</label>
+                      <input type="time" value={businessData.working_hours_start} onChange={(e) => setBusinessData({ ...businessData, working_hours_start: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">{t("settings.workingHoursEnd")}</label>
+                      <input type="time" value={businessData.working_hours_end} onChange={(e) => setBusinessData({ ...businessData, working_hours_end: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="mb-2 block text-xs font-medium text-foreground">Working Days</label>
-                      <div className="flex flex-wrap gap-2">
+                      <label className="mb-2 block text-xs font-medium text-foreground">{t("settings.workingDays")}</label>
+                      <div className="w-full flex flex-wrap justify-start gap-3">
                         {DAY_LABELS.map((label, idx) => {
                           const active = businessData.working_days.includes(idx)
                           return (
@@ -472,7 +408,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                                 setBusinessData({ ...businessData, working_days: days })
                               }}
                               className={cn(
-                                "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                                "rounded-lg p-2 text-xs font-semibold transition-all w-1/12",
                                 active
                                   ? "bg-primary text-primary-foreground shadow-sm"
                                   : "border border-border text-muted-foreground hover:bg-accent"
@@ -489,18 +425,17 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
                 <div className="mt-6 flex justify-end gap-3 border-t border-border pt-6">
                   <button
-                    onClick={() =>
-                      setBusinessData({
-                        name: business?.name || "",
-                        timezone: business?.timezone || "Europe/Istanbul",
-                        working_hours_start: business?.working_hours_start || "09:00",
-                        working_hours_end: business?.working_hours_end || "18:00",
-                        working_days: (business?.working_days as number[]) || [1, 2, 3, 4, 5, 6],
-                      })
-                    }
+                    onClick={() => setBusinessData({
+                      name: business?.name || "",
+                      timezone: business?.timezone || "Europe/Istanbul",
+                      working_hours_start: business?.working_hours_start || "09:00",
+                      working_hours_end: business?.working_hours_end || "18:00",
+                      working_days: (business?.working_days as number[]) || [1, 2, 3, 4, 5, 6],
+                      phone: business?.phone || "",
+                    })}
                     className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                   >
-                    Discard
+                    {t("settings.discard")}
                   </button>
                   <button
                     onClick={handleSaveBusiness}
@@ -508,7 +443,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                     className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-70"
                   >
                     {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {isSaving ? "Saving..." : "Save Changes"}
+                    {isSaving ? t("common.saving") : t("common.saveChanges")}
                   </button>
                 </div>
               </div>
@@ -517,34 +452,18 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
 
           {activeSection === "profile" && (
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Personal Profile</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Manage your account information and preferences.
-              </p>
+              <h2 className="text-2xl font-bold text-foreground">{t("settings.personalProfile")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("settings.personalProfileDesc")}</p>
 
               <div className="mt-6 rounded-xl border border-border bg-card p-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.full_name}
-                      onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                    />
+                    <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("settings.fullName")}</label>
+                    <input type="text" value={profileData.full_name} onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })} className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      readOnly
-                      defaultValue={profile?.email || ""}
-                      className="w-full cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground outline-none"
-                    />
+                    <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("settings.emailAddress")}</label>
+                    <input type="email" readOnly defaultValue={profile?.email || ""} className="w-full cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm text-muted-foreground outline-none" />
                   </div>
                 </div>
 
@@ -553,7 +472,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                     onClick={() => setProfileData({ full_name: profile?.full_name || "" })}
                     className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
                   >
-                    Discard
+                    {t("settings.discard")}
                   </button>
                   <button
                     onClick={handleSaveProfile}
@@ -561,7 +480,7 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
                     className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-70 transition-all shadow-lg shadow-primary/20"
                   >
                     {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {isSaving ? "Saving..." : "Update Profile"}
+                    {isSaving ? t("common.saving") : t("settings.updateProfile")}
                   </button>
                 </div>
               </div>
@@ -575,10 +494,8 @@ export function SettingsClient({ business, profile, billingStatus }: SettingsCli
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
                 <SettingsIcon className="h-8 w-8" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">Coming Soon</h3>
-              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                Notification preferences will be available in a future update.
-              </p>
+              <h3 className="text-lg font-bold text-foreground">{t("settings.comingSoon")}</h3>
+              <p className="mt-2 max-w-sm text-sm text-muted-foreground">{t("settings.comingSoonDesc")}</p>
             </div>
           )}
         </div>
