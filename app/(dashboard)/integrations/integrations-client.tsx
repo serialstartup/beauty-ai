@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { TopBar } from "@/components/dashboard/top-bar"
 import { WhatsAppConnectWizard } from "@/components/dashboard/whatsapp-connect-wizard"
 import { cn } from "@/lib/utils"
@@ -30,6 +31,8 @@ interface IntegrationsClientProps {
 
 export function IntegrationsClient({ profile, integrations, businessId }: IntegrationsClientProps) {
   const { t } = useLanguage()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const waIntegration = integrations.find((i) => i.platform === "whatsapp")
   const igIntegration = integrations.find((i) => i.platform === "instagram")
 
@@ -44,6 +47,32 @@ export function IntegrationsClient({ profile, integrations, businessId }: Integr
   )
   const [aiEnabled, setAiEnabled] = useState<boolean>(profile?.ai_enabled ?? true)
   const [togglingAI, setTogglingAI] = useState(false)
+
+  useEffect(() => {
+    const igSuccess = searchParams.get("ig_success")
+    const igError = searchParams.get("ig_error")
+    if (!igSuccess && !igError) return
+
+    if (igSuccess === "true") {
+      toast.success(t("integrations.instagramConnected"))
+    } else if (igError) {
+      const messages: Record<string, string> = {
+        denied: t("integrations.igErrorDenied"),
+        no_page: t("integrations.igErrorNoPage"),
+        no_ig_account: t("integrations.igErrorNoAccount"),
+        token_exchange: t("integrations.igErrorToken"),
+        db_error: t("integrations.igErrorDB"),
+      }
+      toast.error(messages[igError] || t("integrations.igErrorUnknown"))
+    }
+
+    // Clean up query params from URL without triggering a navigation
+    const url = new URL(window.location.href)
+    url.searchParams.delete("ig_success")
+    url.searchParams.delete("ig_error")
+    router.replace(url.pathname + (url.search || ""))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleToggleAI = async () => {
     setTogglingAI(true)
